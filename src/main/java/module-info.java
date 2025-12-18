@@ -4,6 +4,7 @@ module hr.bmestric.sevenscardgame {
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.datatype.jsr310;
     requires org.slf4j;
+    requires java.rmi;
 
 
     opens hr.bmestric.sevenscardgame to javafx.fxml;
