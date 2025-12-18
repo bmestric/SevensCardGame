@@ -121,7 +121,7 @@ public class GameState implements Serializable {
         }
     }
 
-    private void updateLastModified() {
+    public void updateLastModified() {
         this.lastModifiedAt = Instant.now();
     }
 

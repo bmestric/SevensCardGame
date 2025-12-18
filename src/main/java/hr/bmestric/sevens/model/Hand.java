@@ -87,6 +87,10 @@ public class Hand implements Serializable {
     public void clear() {
         cards.clear();
     }
+
+    public static int getMaxHandSize() {
+        return MAX_HAND_SIZE;
+    }
     @Override
     public String toString() {
         return "Hand" + cards;
