@@ -5,6 +5,7 @@ module hr.bmestric.sevenscardgame {
     requires com.fasterxml.jackson.datatype.jsr310;
     requires org.slf4j;
     requires java.rmi;
+    requires hr.bmestric.sevenscardgame;
 
 
     opens hr.bmestric.sevenscardgame to javafx.fxml;
