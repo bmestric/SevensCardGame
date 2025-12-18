@@ -1,0 +1,41 @@
+# ===== Maven / Java build output =====
+/target/
+*.class
+*.log
+
+# Keep Maven Wrapper JAR committed (recommended)
+!.mvn/wrapper/maven-wrapper.jar
+
+# ===== IntelliJ IDEA =====
+.idea/
+*.iml
+*.iws
+*.ipr
+/out/
+
+# ===== Eclipse =====
+.classpath
+.project
+.settings/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# ===== NetBeans =====
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+/build/
+
+# ===== VS Code =====
+.vscode/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Optional (only if you use Kotlin) =====
+.kotlin
