@@ -6,6 +6,8 @@ module hr.bmestric.sevenscardgame {
     requires org.slf4j;
     requires java.rmi;
     requires hr.bmestric.sevenscardgame;
+    requires java.naming;
+    requires java.xml;
 
 
     opens hr.bmestric.sevenscardgame to javafx.fxml;
