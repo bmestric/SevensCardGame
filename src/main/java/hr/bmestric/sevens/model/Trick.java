@@ -1,5 +1,7 @@
 package hr.bmestric.sevens.model;
 
+import hr.bmestric.sevens.model.enums.Rank;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,6 +14,7 @@ public class Trick implements Serializable {
     private final List<Card> cards;
     private String leadingPlayerId;
     private String lastPlayerId;
+    private String lastMatchingOrTrumpPlayerId;
 
     public Trick() {
         this.cards = new ArrayList<>();
@@ -30,6 +33,13 @@ public class Trick implements Serializable {
             leadingPlayerId = playerId;
         }
         lastPlayerId = playerId;
+
+        if (!cards.isEmpty()) {
+            Rank openingRank = cards.get(0).getRank();
+            if (card.getRank().isTrump() || card.getRank() == openingRank) {
+                lastMatchingOrTrumpPlayerId = playerId;
+            }
+        }
     }
 
     public List<Card> getCards() {
@@ -48,6 +58,10 @@ public class Trick implements Serializable {
         return leadingPlayerId;
     }
 
+    public String getLastMatchingOrTrumpPlayerId() {
+        return lastMatchingOrTrumpPlayerId;
+    }
+
     public Optional<Card> getLastCard() {
         return cards.isEmpty() ? Optional.empty() : Optional.of(cards.get(cards.size() - 1));
     }
@@ -61,10 +75,6 @@ public class Trick implements Serializable {
         if (cards.isEmpty() || leadingPlayerId == null) {
             return 0;
         }
-        // In a 2-player game, cards alternate between players
-        // Leading player plays cards at positions: 0, 2, 4, 6, ...
-        // Responding player plays cards at positions: 1, 3, 5, 7, ...
-        // So leading player card count = (total + 1) / 2
         return (cards.size() + 1) / 2;
     }
 
@@ -72,6 +82,7 @@ public class Trick implements Serializable {
         cards.clear();
         leadingPlayerId = null;
         lastPlayerId = null;
+        lastMatchingOrTrumpPlayerId = null;
     }
 
     @Override

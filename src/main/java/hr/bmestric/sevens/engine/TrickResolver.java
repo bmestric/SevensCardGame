@@ -17,30 +17,9 @@ public class TrickResolver implements ITrickResolver {
             throw new IllegalArgumentException("Cannot determine winner of an empty trick.");
         }
 
-        String leadingPlayerId = trick.getLeadingPlayerId();
-        String respondingPlayerId = leadingPlayerId.equals(player1Id) ? player2Id : player1Id;
+        String winner = trick.getLastMatchingOrTrumpPlayerId();
+        return winner != null ? winner : trick.getLeadingPlayerId();
 
-        int leadingCardCount = trick.getLeadingPlayerCardCount();
-
-        // If only leading player has played
-        if (leadingCardCount == cards.size()) {
-            return leadingPlayerId;
-        }
-
-        String currentWinner = leadingPlayerId;
-        Rank initialRank = cards.getFirst().getRank();
-
-        // Process all cards in the trick to find who played the last trump or matching rank
-        for (int i = 1; i < cards.size(); i++) {
-            Card card = cards.get(i);
-            String playerId = (i < leadingCardCount) ? leadingPlayerId : respondingPlayerId;
-
-            if (card.getRank().isTrump() || card.getRank() == initialRank) {
-                currentWinner = playerId;
-            }
-        }
-
-        return currentWinner;
     }
 
     @Override
