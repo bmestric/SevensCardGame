@@ -7,11 +7,7 @@ import hr.bmestric.sevens.model.GameState;
 import java.io.Closeable;
 import java.rmi.RemoteException;
 
-/**
- * Thin facade over a game runtime (local or remote). Designed to keep JavaFX controllers
- * free from networking, callback registration, and persistence concerns.
- */
-public interface GameSession extends Closeable {
+public interface IGameSession extends Closeable {
 
     GameState getState() throws RemoteException;
 
