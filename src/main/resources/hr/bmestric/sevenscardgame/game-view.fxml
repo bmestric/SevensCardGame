@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="hr.bmestric.sevens.ui.controller.GameViewController"
+            prefHeight="800.0" prefWidth="1000.0">
+
+    <!-- Top: Status Bar -->
+    <top>
+        <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-background-color: #333; -fx-padding: 10;">
+            <Label fx:id="statusLabel" text="Ready" textFill="white" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+            <Label text="|" textFill="white"/>
+            <Label fx:id="deckSizeLabel" text="Deck: 0" textFill="white"/>
+            <Label text="|" textFill="white"/>
+            <Label fx:id="currentPlayerLabel" text="Current: -" textFill="white"/>
+        </HBox>
+    </top>
+
+    <!-- Center: Game Area -->
+    <center>
+        <VBox spacing="0">
+            <!-- Opponent's Area (hidden cards) -->
+            <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #f0f0f0; -fx-border-color: #ccc; -fx-border-width: 1; -fx-padding: 10;">
+                <HBox spacing="20" alignment="CENTER">
+                    <Label fx:id="opponentNameLabel" text="Opponent" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                    <Label fx:id="opponentScoreLabel" text="Score: 0" style="-fx-font-size: 14px;"/>
+                </HBox>
+                <FlowPane fx:id="opponentHandPane" hgap="10" vgap="10" alignment="CENTER" prefHeight="150"/>
+            </VBox>
+
+            <!-- Center: Trick Pile -->
+            <VBox alignment="CENTER" spacing="10" VBox.vgrow="ALWAYS" style="-fx-padding: 20;">
+                <Label text="Current Trick" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <FlowPane fx:id="trickPilePane" hgap="10" vgap="10" alignment="CENTER"
+                          style="-fx-background-color: #2d5016; -fx-border-color: #000; -fx-border-width: 2; -fx-padding: 20;"
+                          prefHeight="200" prefWidth="600"/>
+            </VBox>
+
+            <!-- Your Hand Area -->
+            <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #e8f5e9; -fx-border-color: #4caf50; -fx-border-width: 2; -fx-padding: 10;">
+                <HBox spacing="20" alignment="CENTER">
+                    <Label fx:id="playerNameLabel" text="Your Hand" style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2e7d32;"/>
+                    <Label fx:id="playerScoreLabel" text="Score: 0" style="-fx-font-size: 14px; -fx-text-fill: #2e7d32;"/>
+                </HBox>
+                <FlowPane fx:id="playerHandPane" hgap="10" vgap="10" alignment="CENTER" prefHeight="150"/>
+            </VBox>
+        </VBox>
+    </center>
+
+    <!-- Right: Controls -->
+    <right>
+        <VBox spacing="10" style="-fx-padding: 10; -fx-background-color: #fafafa;" prefWidth="250">
+            <Label text="Game Controls" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+
+            <Button fx:id="newGameButton" text="New Game" maxWidth="Infinity" onAction="#onNewGame"/>
+            <Button fx:id="saveButton" text="Save Game" maxWidth="Infinity" onAction="#onSaveGame"/>
+            <Button fx:id="loadButton" text="Load Game" maxWidth="Infinity" onAction="#onLoadGame"/>
+            <Button fx:id="passButton" text="Pass / Skip" maxWidth="Infinity" onAction="#onPassTurn"
+                    style="-fx-background-color: #ff9800; -fx-text-fill: white;" managed="false" visible="false"/>
+            <Button fx:id="endButton" text="End Game" maxWidth="Infinity" onAction="#onEndGame"/>
+
+            <Separator/>
+
+            <Label text="Chat" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+            <TextArea fx:id="chatArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS" prefHeight="150"/>
+            <HBox spacing="5">
+                <TextField fx:id="chatInput" promptText="Type a message..." HBox.hgrow="ALWAYS" onAction="#onSendChat"/>
+                <Button text="Send" onAction="#onSendChat" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+            </HBox>
+
+            <Separator/>
+
+            <Label text="Game Info" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+            <Label fx:id="gameInfoLabel" text="Waiting for game..." wrapText="true" style="-fx-font-size: 11px;"/>
+        </VBox>
+    </right>
+
+</BorderPane>

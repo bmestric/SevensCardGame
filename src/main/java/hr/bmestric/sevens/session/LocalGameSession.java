@@ -5,12 +5,12 @@ import hr.bmestric.sevens.engine.interfaces.IGameEngine;
 import hr.bmestric.sevens.model.Card;
 import hr.bmestric.sevens.model.GameState;
 import hr.bmestric.sevens.model.Player;
-import hr.bmestric.sevens.session.interfaces.GameSession;
+import hr.bmestric.sevens.session.interfaces.IGameSession;
 
 import java.util.List;
 import java.util.Objects;
 
-public class LocalGameSession implements GameSession {
+public class LocalGameSession implements IGameSession {
 
     private final IGameEngine engine;
     private volatile StateListener stateListener;
