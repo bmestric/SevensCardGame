@@ -13,4 +13,6 @@ public interface ISessionFactory {
     IGameSession createRmiGameSession(IRemoteGameEngine remoteEngine, String clientId);
 
     IChatSession createRmiChatSession(IChatService chatService, Player player);
+
+    IChatSession createTcpChatSession(String host, int port, String playerName);
 }

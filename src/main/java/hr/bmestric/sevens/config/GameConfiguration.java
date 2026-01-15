@@ -1,5 +1,7 @@
 package hr.bmestric.sevens.config;
 
+import hr.bmestric.sevens.util.ConfigSyncUtil;
+
 import java.io.Serializable;
 
 public class GameConfiguration implements Serializable {
@@ -44,6 +46,7 @@ public class GameConfiguration implements Serializable {
 
     public void setMaxHandSize(int maxHandSize) {
         this.maxHandSize = maxHandSize;
+        ConfigSyncUtil.updateAppConf(ConfigurationKey.MAX_HAND_SIZE.getKey(), String.valueOf(maxHandSize));
     }
 
     public int getDeckSize() {

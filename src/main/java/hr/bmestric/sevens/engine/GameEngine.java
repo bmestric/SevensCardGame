@@ -1,5 +1,6 @@
 package hr.bmestric.sevens.engine;
 
+import hr.bmestric.sevens.config.GameConfiguration;
 import hr.bmestric.sevens.engine.interfaces.IGameEngine;
 import hr.bmestric.sevens.engine.interfaces.IMoveValidator;
 import hr.bmestric.sevens.engine.interfaces.ITrickResolver;
@@ -16,8 +17,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class GameEngine implements IGameEngine {
+    private static final GameConfiguration config = new GameConfiguration();
     private static final Logger logger = LoggerFactory.getLogger(GameEngine.class);
-    private static final int INITIAL_HAND_SIZE = 4;
+    private static final int INITIAL_HAND_SIZE = config.getMaxHandSize();
     private static final int WINNING_SCORE = 4;
 
     private final IMoveValidator moveValidator;

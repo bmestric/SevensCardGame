@@ -6,10 +6,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import hr.bmestric.sevens.config.GameConfiguration;
+
 
 public class Hand implements Serializable {
+    private static final GameConfiguration config = new GameConfiguration();
     private static final long serialVersionUID = 1L;
-    private static final int MAX_HAND_SIZE = 4;
+    private static final int MAX_HAND_SIZE = config.getMaxHandSize();
 
     private final List<Card> cards;
 

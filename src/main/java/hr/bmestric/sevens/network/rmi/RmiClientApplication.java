@@ -8,6 +8,7 @@ import hr.bmestric.sevens.network.rmi.interfaces.IRemoteGameEngine;
 import hr.bmestric.sevens.persistence.AsyncStorageService;
 import hr.bmestric.sevens.persistence.ObjectStorageService;
 import hr.bmestric.sevens.ui.controller.GameViewController;
+import hr.bmestric.sevens.ui.controller.RmiConnectController;
 import hr.bmestric.sevens.ui.service.FxDialogService;
 import hr.bmestric.sevens.ui.service.GameFileDialogService;
 import hr.bmestric.sevens.ui.service.UiServices;
@@ -44,8 +45,7 @@ public class RmiClientApplication extends Application {
 
     private static final String DEFAULT_RMI_HOST = gameConfiguration.getRmiRegistryHost();
     private static final int DEFAULT_PORT = gameConfiguration.getRmiRegistryPort();
-
-    private static final Random RANDOM = new Random();
+    private static final int TCP_CHAT_PORT = gameConfiguration.getTcpPort();
 
     private IRemoteGameEngine remoteEngine;
     private Player localPlayer;
@@ -65,54 +65,27 @@ public class RmiClientApplication extends Application {
     }
 
     private void showPlayerNameDialog() {
-        Stage dialog = new Stage();
-        dialog.setTitle(APP_TITLE);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/hr/bmestric/sevenscardgame/rmi-connect-view.fxml"));
+            Parent root = loader.load();
 
-        VBox root = new VBox(15);
-        root.setPadding(new Insets(20));
-        root.setAlignment(Pos.CENTER);
+            RmiConnectController controller = loader.getController();
+            controller.setServerInfo(DEFAULT_RMI_HOST, DEFAULT_PORT);
+            controller.setOnConnect(this::connectToServer);
+            controller.setOnCancel(Platform::exit);
 
-        Label title = new Label("Join RMI Game Server");
-        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+            Stage dialog = new Stage();
+            dialog.setTitle(APP_TITLE);
+            dialog.setScene(new Scene(root));
+            dialog.setOnCloseRequest(e -> controller.handleClose());
+            dialog.show();
 
-        Label subtitle = new Label("Connecting to server at " + DEFAULT_RMI_HOST + ":" + DEFAULT_PORT);
-        subtitle.setStyle("-fx-font-size: 11px; -fx-text-fill: gray;");
-
-        Label name = new Label("Enter your name:");
-        TextField nameField = new TextField("Player " + RANDOM.nextInt(100));
-        nameField.setPrefWidth(250);
-
-        Button connectButton = new Button("Connect to Server");
-        connectButton.setPrefWidth(250);
-        connectButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px;");
-        connectButton.setOnAction(e -> {
-            String playerName = nameField.getText().trim();
-
-            if(playerName.isEmpty()) {
-                showError("Please enter your name");
-                return;
-            }
-
-            dialog.close();
-            connectToServer(playerName);
-        });
-
-        root.getChildren().addAll(
-                title,
-                subtitle,
-                new Label(),
-                name,
-                nameField,
-                new Label(),
-                connectButton
-        );
-
-        Scene scene = new Scene(root, 350, 300);
-        dialog.setScene(scene);
-        dialog.setOnCloseRequest(e -> {
+            logger.info("Connection dialog displayed");
+        } catch (IOException e) {
+            logger.error("Failed to load connection dialog", e);
+            showError("Failed to load connection dialog: " + e.getMessage());
             Platform.exit();
-        });
-        dialog.show();
+        }
     }
 
     private void connectToServer(String playerName) {
@@ -175,9 +148,8 @@ public class RmiClientApplication extends Application {
         controller.setLocalPlayer(localPlayer);
         controller.setRemoteEngine(remoteEngine, clientId);
 
-        if (chatService != null) {
-            controller.setChatService(chatService, localPlayer.getId());
-        }
+        // Use TCP chat instead of RMI chat
+        controller.setTcpChat(DEFAULT_RMI_HOST, TCP_CHAT_PORT, localPlayer.getDisplayName());
 
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -190,6 +162,7 @@ public class RmiClientApplication extends Application {
             try {
                 controller.shutdown();
             } catch (Exception ignored) {
+                // Expected during shutdown
             }
             cleanup();
             Platform.exit();

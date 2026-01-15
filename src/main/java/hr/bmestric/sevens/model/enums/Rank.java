@@ -4,7 +4,7 @@ public enum Rank {
     SEVEN("7", 7, 0),
     EIGHT("8", 8, 0),
     NINE("9", 9, 0),
-    TEN("10", 10, 1),      // Worth 1 point
+    TEN("10", 10, 1),
     JACK("J", 11, 0),
     QUEEN("Q", 12, 0),
     KING("K", 13, 0),

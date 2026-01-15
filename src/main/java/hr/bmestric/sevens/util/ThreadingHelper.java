@@ -12,7 +12,7 @@ public class ThreadingHelper {
     private static final Logger logger = LoggerFactory.getLogger(ThreadingHelper.class);
 
     private ThreadingHelper() {
-        // Utility class
+
     }
 
     // Creates a fixed thread pool with daemon threads.

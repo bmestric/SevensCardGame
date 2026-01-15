@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="hr.bmestric.sevens.ui.controller.WinDialogController"
+      spacing="20"
+      alignment="CENTER"
+      prefHeight="500.0"
+      prefWidth="400.0"
+      style="-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e);">
+
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <!-- Trophy/Emoji -->
+    <Label fx:id="trophyLabel"
+           style="-fx-font-size: 72px; -fx-font-family: 'Segoe UI Emoji';"/>
+
+    <!-- Winner Announcement -->
+    <Label fx:id="winnerLabel"
+           style="-fx-font-size: 36px; -fx-font-weight: bold;"/>
+
+    <!-- Subtitle -->
+    <Label fx:id="subtitleLabel"
+           style="-fx-font-size: 18px; -fx-text-fill: lightgray;"/>
+
+    <!-- Score Display Box -->
+    <VBox spacing="10" alignment="CENTER"
+          style="-fx-background-color: rgba(0, 0, 0, 0.3); -fx-background-radius: 10;">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
+
+        <Label text="Final Scores"
+               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+
+        <Label fx:id="winnerScoreLabel"
+               style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: gold;"/>
+
+        <Label fx:id="loserScoreLabel"
+               style="-fx-font-size: 18px; -fx-text-fill: lightgray;"/>
+    </VBox>
+
+    <!-- Buttons -->
+    <VBox spacing="10" alignment="CENTER">
+        <Button fx:id="newGameButton"
+                text="New Game"
+                prefWidth="200"
+                style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;"
+                onAction="#onNewGame"
+                defaultButton="true"/>
+
+        <Button fx:id="closeButton"
+                text="Close"
+                prefWidth="200"
+                style="-fx-background-color: #7f8c8d; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 8 20;"
+                onAction="#onClose"
+                cancelButton="true"/>
+    </VBox>
+
+</VBox>
+

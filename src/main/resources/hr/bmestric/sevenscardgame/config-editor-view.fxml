@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.Separator?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="hr.bmestric.sevens.ui.controller.ConfigEditorController"
+      spacing="15"
+      prefWidth="550"
+      prefHeight="400"
+      style="-fx-background-color: white;">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <Label text="⚙️ Game Configuration Editor"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    <Label text="Edit game settings (Changes will restart the game for all players)"
+           style="-fx-font-size: 12px; -fx-text-fill: #ff9800; -fx-font-weight: bold;"/>
+
+    <Separator/>
+
+    <!-- Warning Box -->
+    <VBox style="-fx-background-color: #fff3e0; -fx-padding: 10; -fx-border-color: #ff9800; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+        <Label text="⚠️ Important:" style="-fx-font-weight: bold; -fx-text-fill: #f57c00;"/>
+        <Label text="• Changing settings will restart the current game" style="-fx-text-fill: #f57c00;"/>
+        <Label text="• All players will be affected" style="-fx-text-fill: #f57c00;"/>
+        <Label text="• Make sure all players agree before saving" style="-fx-text-fill: #f57c00;"/>
+    </VBox>
+
+    <Separator/>
+
+    <!-- Configuration Form -->
+    <GridPane hgap="15" vgap="15">
+        <!-- Game Settings -->
+        <Label text="Game Settings" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="2"
+               style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #667eea;"/>
+
+        <Label text="Max Hand Size:" GridPane.rowIndex="1" GridPane.columnIndex="0"
+               style="-fx-font-size: 14px;"/>
+        <TextField fx:id="maxHandSizeField" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                   prefWidth="250" promptText="Enter 2-10"
+                   style="-fx-font-size: 14px;"/>
+
+        <Label GridPane.rowIndex="2" GridPane.columnIndex="1"
+               text="Number of cards each player starts with (2-10)"
+               style="-fx-font-size: 11px; -fx-text-fill: gray;"/>
+
+    </GridPane>
+
+    <Separator/>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#onCancel" prefWidth="120"
+                style="-fx-background-color: #9e9e9e; -fx-text-fill: white; -fx-font-size: 13px;"/>
+        <Button text="Save &amp; Restart Game" onAction="#onSaveToXml" prefWidth="180"
+                style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;"/>
+    </HBox>
+
+</VBox>
+

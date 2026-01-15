@@ -2,9 +2,11 @@ package hr.bmestric.sevens.network.rmi;
 
 import hr.bmestric.sevens.config.GameConfiguration;
 import hr.bmestric.sevens.network.chat.ChatServiceImpl;
+import hr.bmestric.sevens.network.tcp.TcpChatServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
@@ -12,6 +14,7 @@ public class RmiGameServer {
     private static final Logger logger = LoggerFactory.getLogger(RmiGameServer.class);
     private static final GameConfiguration gameConfiguration = new GameConfiguration();
     private static final int DEFAULT_PORT = gameConfiguration.getRmiRegistryPort();
+    private static final int TCP_CHAT_PORT = gameConfiguration.getTcpPort();
     private static final String SERVICE_NAME = "SevensGameEngine";
 
     public static void main(String[] args) {
@@ -49,13 +52,25 @@ public class RmiGameServer {
 
                 logger.info("Game Engine bound to registry as '{}'", SERVICE_NAME);
                 logger.info("Chat Service bound to registry as 'SevensChatService'");
+
+                // Start TCP chat server
+                TcpChatServer tcpChatServer = new TcpChatServer(TCP_CHAT_PORT);
+                try {
+                    tcpChatServer.start();
+                    logger.info("TCP Chat Server started on port {}", TCP_CHAT_PORT);
+                } catch (IOException e) {
+                    logger.error("Failed to start TCP chat server", e);
+                    throw new RuntimeException("Failed to start TCP chat server", e);
+                }
+
                 System.out.println("╔═══════════════════════════════════════════════════╗");
                 System.out.println("║                                                   ║");
                 System.out.println("║        RMI GAME SERVER STARTED                    ║");
                 System.out.println("║                                                   ║");
                 System.out.println("╚═══════════════════════════════════════════════════╝");
                 System.out.println();
-                System.out.println("  Port: " + port);
+                System.out.println("  RMI Port: " + port);
+                System.out.println("  TCP Chat Port: " + TCP_CHAT_PORT);
                 System.out.println("  Service: " + SERVICE_NAME);
                 System.out.println();
                 System.out.println("  Waiting for clients to connect...");
@@ -63,10 +78,12 @@ public class RmiGameServer {
                 System.out.println();
 
                 final Registry finalRegistry = registry;
+                final TcpChatServer finalTcpServer = tcpChatServer;
 
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     try {
-                        logger.info("Shutting down RMI Game Server");
+                        logger.info("Shutting down servers");
+                        finalTcpServer.close();
                         finalRegistry.unbind(SERVICE_NAME);
                         System.out.println("\nServer shut down gracefully.");
                     } catch (Exception e) {

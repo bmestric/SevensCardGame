@@ -9,6 +9,7 @@ module hr.bmestric.sevenscardgame {
     requires java.xml;
     requires java.logging;
     requires javafx.graphics;
+    requires org.reflections;
 
 
     opens hr.bmestric.sevenscardgame to javafx.fxml;

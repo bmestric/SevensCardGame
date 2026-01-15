@@ -1,11 +1,11 @@
 package hr.bmestric.sevens.session.interfaces;
 
 import java.io.Closeable;
-import java.rmi.RemoteException;
+import java.io.IOException;
 
 public interface IChatSession extends Closeable {
 
-    void sendMessage(String fromPlayerId, String fromPlayerName, String message) throws RemoteException;
+    void sendMessage(String fromPlayerId, String fromPlayerName, String message) throws IOException;
 
     void setMessageListener(MessageListener listener);
 

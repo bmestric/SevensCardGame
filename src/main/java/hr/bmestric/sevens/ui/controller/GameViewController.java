@@ -18,14 +18,18 @@ import hr.bmestric.sevens.persistence.AsyncStorageService;
 import hr.bmestric.sevens.persistence.ObjectStorageService;
 import hr.bmestric.sevens.session.interfaces.IChatSession;
 import hr.bmestric.sevens.session.interfaces.IGameSession;
+import hr.bmestric.sevens.ui.model.UIViewModel;
+import hr.bmestric.sevens.ui.service.AsyncRmiService;
 import hr.bmestric.sevens.ui.service.FxDialogService;
 import hr.bmestric.sevens.ui.service.GameFileDialogService;
 import hr.bmestric.sevens.ui.service.ISessionFactory;
+import hr.bmestric.sevens.ui.service.UiDataPreparationService;
 import hr.bmestric.sevens.ui.service.UiServices;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
@@ -40,6 +44,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.rmi.RemoteException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class GameViewController implements IGameEventListener<GameEvent> {
     private static final Logger logger = LoggerFactory.getLogger(GameViewController.class);
@@ -69,6 +74,7 @@ public class GameViewController implements IGameEventListener<GameEvent> {
     @FXML private Button loadButton;
     @FXML private Button passButton;
     @FXML private Button endButton;
+    @FXML private ProgressIndicator loadingIndicator;
 
     private final AppContext appContext;
     private final IGameEngine gameEngine;
@@ -85,7 +91,8 @@ public class GameViewController implements IGameEventListener<GameEvent> {
 
     private FxDialogService dialogService = new FxDialogService();
     private GameFileDialogService fileDialogService = new GameFileDialogService();
-
+    private AsyncRmiService asyncRmiService = new AsyncRmiService();
+    private UiDataPreparationService uiPrepService = new UiDataPreparationService();
 
     private ISessionFactory sessionFactory;
 
@@ -107,6 +114,8 @@ public class GameViewController implements IGameEventListener<GameEvent> {
         this.fileDialogService = services.fileDialogs();
         this.storageService = services.storage();
         this.sessionFactory = services.sessions();
+        this.asyncRmiService = services.asyncRmi();
+        this.uiPrepService = services.uiPrep();
     }
 
     public void setLocalPlayer(Player player) {
@@ -169,6 +178,34 @@ public class GameViewController implements IGameEventListener<GameEvent> {
         }
     }
 
+    public void setTcpChat(String host, int port, String playerName) {
+        IChatSession newChat = null;
+        try {
+            newChat = sessionFactory.createTcpChatSession(host, port, playerName);
+            newChat.setMessageListener((fromPlayerName, message, timestamp) -> {
+                if (localPlayer != null && fromPlayerName.equals(localPlayer.getDisplayName())) {
+                    return;
+                }
+                Platform.runLater(() -> {
+                    String formattedMessage = String.format("[%s] %s: %s%n", timestamp, fromPlayerName, message);
+                    chatArea.appendText(formattedMessage);
+                });
+            });
+
+            if (newChat instanceof hr.bmestric.sevens.session.TcpChatSession tcpChat) {
+                tcpChat.connect();
+            }
+
+            closeQuietly(this.chatSession);
+            this.chatSession = newChat;
+            logger.info("TCP chat session initialized");
+        } catch (Exception e) {
+            closeQuietly(newChat);
+            logger.error("Failed to initialize TCP chat session", e);
+            this.chatSession = null;
+        }
+    }
+
     @FXML
     private void initialize() {
         appContext.getEventBus().subscribe(GameEvent.class, this);
@@ -177,21 +214,30 @@ public class GameViewController implements IGameEventListener<GameEvent> {
 
     @FXML
     private void onNewGame() {
-        try {
-            if (session != null) {
-                session.resetAndRestartIfPossible();
+        showLoading(true);
+
+        asyncRmiService.resetGameAsync(session)
+            .thenRunAsync(() -> {
+                showLoading(false);
                 dialogService.showInfo("New Game", "Game restarted!");
                 if (!isRmiMode) {
                     updateUI();
                 }
-            }
-        } catch (RemoteException e) {
-            logger.error("RMI error starting new game", e);
-            dialogService.showError(NETWORK_ERROR_PREFIX + e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error starting new game", e);
-            dialogService.showError("Error: " + e.getMessage());
-        }
+            }, Platform::runLater)
+            .exceptionally(ex -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof RemoteException) {
+                        logger.error("RMI error starting new game", cause);
+                        dialogService.showError(NETWORK_ERROR_PREFIX + cause.getMessage());
+                    } else {
+                        logger.error("Error starting new game", cause);
+                        dialogService.showError("Error: " + cause.getMessage());
+                    }
+                });
+                return null;
+            });
     }
 
     @FXML
@@ -249,18 +295,25 @@ public class GameViewController implements IGameEventListener<GameEvent> {
     }
 
     private void applyLoadedState(GameState loadedState, File file) {
-        try {
-            session.restoreState(loadedState);
+        showLoading(true);
 
-            if (localPlayer != null) {
-                localPlayer = loadedState.getPlayerById(localPlayer.getId()).orElse(localPlayer);
-            }
+        asyncRmiService.restoreStateAsync(session, loadedState)
+            .thenRunAsync(() -> {
+                if (localPlayer != null) {
+                    localPlayer = loadedState.getPlayerById(localPlayer.getId()).orElse(localPlayer);
+                }
 
-            dialogService.showInfo("Game Loaded", "Game loaded successfully from: " + file.getName());
-            updateUI();
-        } catch (Exception ex) {
-            dialogService.showError("Failed to apply loaded game: " + rootMessage(ex));
-        }
+                showLoading(false);
+                dialogService.showInfo("Game Loaded", "Game loaded successfully from: " + file.getName());
+                updateUI();
+            }, Platform::runLater)
+            .exceptionally(ex -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    dialogService.showError("Failed to apply loaded game: " + rootMessage(ex));
+                });
+                return null;
+            });
     }
 
     @FXML
@@ -301,9 +354,9 @@ public class GameViewController implements IGameEventListener<GameEvent> {
         }
 
         try {
-            if (chatSession != null && opponentPlayer != null) {
+            if (chatSession != null) {
                 chatSession.sendMessage(localPlayer.getId(), localPlayer.getDisplayName(), message);
-                logger.info("Chat message sent via RMI: {}", message);
+                logger.info("Chat message sent: {}", message);
             }
 
             String timestamp = java.time.LocalTime.now().format(
@@ -313,59 +366,199 @@ public class GameViewController implements IGameEventListener<GameEvent> {
             chatArea.appendText(formattedMessage);
 
             chatInput.clear();
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             logger.error("Failed to send chat message", e);
             showError("Failed to send message: " + e.getMessage());
         }
     }
 
-    private void updateUI() {
+    @FXML
+    private void onSaveXmlConfig() {
+        logger.info("Opening XML configuration editor...");
+
         try {
-            // Get state from appropriate source
-            GameState state;
-            if (session != null) {
-                state = session.getState();
-            } else if (isRmiMode && remoteEngine != null) {
-                state = remoteEngine.getGameState();
-            } else {
-                state = gameEngine.getState();
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader();
+            loader.setLocation(getClass().getResource("/hr/bmestric/sevenscardgame/config-editor-view.fxml"));
+            javafx.scene.layout.VBox page = loader.load();
+
+            // Create dialog
+            javafx.stage.Stage dialogStage = new javafx.stage.Stage();
+            dialogStage.setTitle("XML Configuration Editor");
+            dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            dialogStage.initOwner(playerHandPane.getScene().getWindow());
+            javafx.scene.Scene scene = new javafx.scene.Scene(page);
+            dialogStage.setScene(scene);
+
+            // Set controller
+            ConfigEditorController controller = loader.getController();
+            controller.setDialogStage(dialogStage);
+
+            // Show and wait
+            dialogStage.showAndWait();
+
+            if (controller.isSaved()) {
+                logger.info("Configuration saved successfully via editor");
             }
 
-            if (state == null) {
-                statusLabel.setText(isRmiMode ? "Waiting for game to start..." : "No active game");
+        } catch (Exception e) {
+            logger.error("Failed to open config editor", e);
+            showError("Failed to open config editor: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onReloadXmlConfig() {
+        logger.info("Reloading XML configuration...");
+
+        try {
+            hr.bmestric.sevens.config.XmlConfigProvider provider =
+                new hr.bmestric.sevens.config.XmlConfigProvider();
+
+            java.nio.file.Path xmlPath = java.nio.file.Paths.get(
+                "src/main/resources/config/game-config.xml");
+
+            hr.bmestric.sevens.config.GameConfiguration config =
+                provider.loadConfig(xmlPath);
+
+            dialogService.showInfo("XML Config Loaded",
+                "Configuration loaded from XML file!\n\n" +
+                "Parser: SAX (event-driven)\n" +
+                "TCP Port: " + config.getTcpPort() + "\n" +
+                "RMI Port: " + config.getRmiRegistryPort() + "\n" +
+                "Max Hand Size: " + config.getMaxHandSize() + "\n" +
+                "Deck Size: " + config.getDeckSize());
+
+            logger.info("XML configuration loaded successfully");
+
+        } catch (Exception e) {
+            logger.error("Failed to load XML configuration", e);
+            showError("Failed to load XML config: " + e.getMessage());
+        }
+    }
+
+    private void updateUI() {
+        // Show loading indicator
+        showLoading(true);
+
+        try {
+            // Phase 1: Fetch game state asynchronously (may block on network)
+            CompletableFuture<GameState> stateFuture;
+
+            if (session != null) {
+                stateFuture = asyncRmiService.getStateAsync(session);
+            } else if (isRmiMode && remoteEngine != null) {
+                stateFuture = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return remoteEngine.getGameState();
+                    } catch (RemoteException e) {
+                        throw new AsyncRmiService.AsyncRmiException("Failed to get state from RMI", e);
+                    }
+                });
+            } else {
+                stateFuture = CompletableFuture.completedFuture(gameEngine.getState());
+            }
+
+            // Phase 2 & 3: Prepare UI data in background, then update UI on JavaFX thread
+            stateFuture
+                .thenCompose(state -> {
+                    if (state == null) {
+                        return CompletableFuture.completedFuture(null);
+                    }
+                    String playerId = localPlayer != null ? localPlayer.getId() : null;
+                    return uiPrepService.prepareViewModelAsync(state, playerId);
+                })
+                .thenAcceptAsync(viewModel -> {
+                    showLoading(false);
+                    if (viewModel != null) {
+                        applyViewModelToUI(viewModel);
+                    }
+                }, Platform::runLater)
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> {
+                        showLoading(false);
+                        logger.error("Error updating UI asynchronously", ex);
+                        statusLabel.setText("Error updating UI");
+                    });
+                    return null;
+                });
+
+        } catch (Exception e) {
+            showLoading(false);
+            logger.error("Error initiating UI update", e);
+        }
+    }
+
+    private void applyViewModelToUI(hr.bmestric.sevens.ui.model.UIViewModel viewModel) {
+        if (viewModel == null) {
+            statusLabel.setText(isRmiMode ? "Waiting for game to start..." : "No active game");
+            return;
+        }
+
+        GameState state = viewModel.getGameState();
+        if (state == null) {
+            statusLabel.setText("No active game");
+            return;
+        }
+
+        // Update local player reference
+        if (localPlayer != null) {
+            localPlayer = state.getPlayerById(localPlayer.getId()).orElse(localPlayer);
+        }
+
+        // Apply pre-calculated values
+        statusLabel.setText(viewModel.getStatusText());
+        deckSizeLabel.setText(viewModel.getDeckInfo());
+        currentPlayerLabel.setText(viewModel.getCurrentPlayerInfo());
+
+        // Update opponent reference
+        opponentPlayer = (localPlayer != null)
+                ? state.getOpponent(localPlayer.getId()).orElse(null)
+                : null;
+
+        updatePlayerInfo();
+        updateHands();
+        updateTrickPile(state);
+        updatePassButtonVisibility(state);
+        updateGameInfo(state);
+
+        // Check for game over and show win dialog
+        checkAndShowWinDialog(state);
+    }
+
+    private void checkAndShowWinDialog(GameState state) {
+        if (state.isGameOver() && state.getWinner().isPresent()) {
+            Player winner = state.getWinner().get();
+            Player loser = state.getPlayers().stream()
+                    .filter(p -> !p.getId().equals(winner.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (loser == null) {
                 return;
             }
 
-            if (localPlayer != null) {
-                localPlayer = state.getPlayerById(localPlayer.getId()).orElse(localPlayer);
-            }
+            boolean isLocalPlayerWinner = localPlayer != null &&
+                                          winner.getId().equals(localPlayer.getId());
 
-            statusLabel.setText(state.getGameStatus().toString());
-            deckSizeLabel.setText("Deck: " + state.getDeck().remaining());
-
-            String currentPlayerId = state.getCurrentTurnPlayerId();
-            state.getPlayerById(currentPlayerId).ifPresent(player ->
-                    currentPlayerLabel.setText(player.getDisplayName() + "'s turn")
+            // Use FxDialogService to show win dialog (MVC pattern)
+            dialogService.showWinDialog(
+                winner,
+                loser,
+                isLocalPlayerWinner,
+                () -> {
+                    logger.info("New game requested from win dialog");
+                    onNewGame();
+                },
+                () -> {
+                    logger.info("Win dialog closed");
+                }
             );
+        }
+    }
 
-            opponentPlayer = (localPlayer != null)
-                    ? state.getOpponent(localPlayer.getId()).orElse(null)
-                    : null;
-
-            updatePlayerInfo();
-
-            updateHands();
-
-            updateTrickPile(state);
-
-            updatePassButtonVisibility(state);
-
-            updateGameInfo(state);
-        } catch (RemoteException e) {
-            logger.error("RMI error updating UI", e);
-            statusLabel.setText("Connection error");
-        } catch (Exception e) {
-            logger.error("Error updating UI", e);
+    private void showLoading(boolean show) {
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisible(show);
         }
     }
 
@@ -484,29 +677,60 @@ public class GameViewController implements IGameEventListener<GameEvent> {
     private void onCardClicked(Card card) {
         if (localPlayer == null) return;
 
-        try {
-            GameState state = session.getState();
-            if (state == null) return;
+        showLoading(true);
 
-            if (!localPlayer.getId().equals(state.getCurrentTurnPlayerId())) {
-                showError("It's not your turn!");
-                return;
-            }
+        // Check turn asynchronously
+        asyncRmiService.getStateAsync(session)
+            .thenAcceptAsync(state -> {
+                if (state == null) {
+                    Platform.runLater(() -> {
+                        showLoading(false);
+                        showError("No active game");
+                    });
+                    return;
+                }
 
-            session.playCard(localPlayer.getId(), card);
+                if (!localPlayer.getId().equals(state.getCurrentTurnPlayerId())) {
+                    Platform.runLater(() -> {
+                        showLoading(false);
+                        showError("It's not your turn!");
+                    });
+                    return;
+                }
 
-            if (!isRmiMode) {
-                updateUI();
-            }
-        } catch (InvalidMoveException e) {
-            showError("Invalid move: " + e.getMessage());
-        } catch (RemoteException e) {
-            logger.error(NETWORK_ERROR_LOG, e);
-            showError(NETWORK_ERROR_PREFIX + e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error playing card", e);
-            showError("Error: " + e.getMessage());
-        }
+                // Play card asynchronously
+                asyncRmiService.playCardAsync(session, localPlayer.getId(), card)
+                    .thenRunAsync(() -> {
+                        showLoading(false);
+                        if (!isRmiMode) {
+                            updateUI();
+                        }
+                    }, Platform::runLater)
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> {
+                            showLoading(false);
+                            Throwable cause = ex.getCause();
+                            if (cause instanceof InvalidMoveException) {
+                                showError("Invalid move: " + cause.getMessage());
+                            } else if (cause instanceof RemoteException) {
+                                logger.error(NETWORK_ERROR_LOG, cause);
+                                showError(NETWORK_ERROR_PREFIX + cause.getMessage());
+                            } else {
+                                logger.error("Error playing card", cause);
+                                showError("Error: " + cause.getMessage());
+                            }
+                        });
+                        return null;
+                    });
+            }, Platform::runLater)
+            .exceptionally(ex -> {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    logger.error("Error checking game state", ex);
+                    showError("Error: " + ex.getMessage());
+                });
+                return null;
+            });
     }
 
     private String formatCard(Card card) {

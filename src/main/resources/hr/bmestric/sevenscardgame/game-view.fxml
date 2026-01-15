@@ -37,9 +37,12 @@
             <!-- Center: Trick Pile -->
             <VBox alignment="CENTER" spacing="10" VBox.vgrow="ALWAYS" style="-fx-padding: 20;">
                 <Label text="Current Trick" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-                <FlowPane fx:id="trickPilePane" hgap="10" vgap="10" alignment="CENTER"
-                          style="-fx-background-color: #2d5016; -fx-border-color: #000; -fx-border-width: 2; -fx-padding: 20;"
-                          prefHeight="200" prefWidth="600"/>
+                <StackPane>
+                    <FlowPane fx:id="trickPilePane" hgap="10" vgap="10" alignment="CENTER"
+                              style="-fx-background-color: #2d5016; -fx-border-color: #000; -fx-border-width: 2; -fx-padding: 20;"
+                              prefHeight="200" prefWidth="600"/>
+                    <ProgressIndicator fx:id="loadingIndicator" visible="false" prefWidth="50" prefHeight="50"/>
+                </StackPane>
             </VBox>
 
             <!-- Your Hand Area -->
@@ -64,6 +67,14 @@
             <Button fx:id="passButton" text="Pass / Skip" maxWidth="Infinity" onAction="#onPassTurn"
                     style="-fx-background-color: #ff9800; -fx-text-fill: white;" managed="false" visible="false"/>
             <Button fx:id="endButton" text="End Game" maxWidth="Infinity" onAction="#onEndGame"/>
+
+            <Separator/>
+
+            <Label text="Configuration" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+            <Button text="Edit &amp; Save XML Config" maxWidth="Infinity" onAction="#onSaveXmlConfig"
+                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 11px;"/>
+            <Button text="Reload XML Config" maxWidth="Infinity" onAction="#onReloadXmlConfig"
+                    style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 11px;"/>
 
             <Separator/>
 

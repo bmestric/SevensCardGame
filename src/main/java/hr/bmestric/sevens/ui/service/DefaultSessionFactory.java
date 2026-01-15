@@ -23,4 +23,9 @@ public class DefaultSessionFactory implements ISessionFactory {
     public IChatSession createRmiChatSession(IChatService chatService, Player player) {
         return new RmiChatSession(chatService, player.getId());
     }
+
+    @Override
+    public IChatSession createTcpChatSession(String host, int port, String playerName) {
+        return new TcpChatSession(host, port, playerName);
+    }
 }
